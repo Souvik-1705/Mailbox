@@ -27,6 +27,7 @@ const LoginForm = () => {
       const token = await result.user.getIdToken();
       localStorage.setItem('token', token);
       console.log('Login successful, token:', token);
+      localStorage.setItem('email', email);
       navigate('/welcome');
     } catch (err) {
       alert('Invalid email or password!');
