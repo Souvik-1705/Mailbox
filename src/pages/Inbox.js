@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button, Card, Container, ListGroup, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -10,12 +10,11 @@ const Inbox = () => {
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
   const { mails, unreadCount } = useSelector(state => state.mail);
-
   const encodedEmail = userEmail?.replace(/[.@]/g, '');
   console.log("User email in Inbox fetch:", userEmail);
   console.log("Encoded email in Inbox fetch:", encodedEmail);
+  const intervalRef=useRef();
 
   useEffect(() => {
     const fetchMails = async () => {
@@ -24,7 +23,6 @@ const Inbox = () => {
         setLoading(false);
         return;
       }
-
       try {
         const response = await fetch(
           `https://mailbox-9747c-default-rtdb.firebaseio.com/inbox/${encodedEmail}.json?auth=${token}`
@@ -49,8 +47,11 @@ const Inbox = () => {
             read: data[key].read || false, // default to false if not present
           });
         }
-
+        const currentIds = mails.map((m) => m.id).sort().join(',');
+        const newIds = loadedMails.map((m) => m.id).sort().join(',');
+        if(currentIds!==newIds){
         dispatch(mailActions.setMails(loadedMails.reverse()));
+        }
       } catch (err) {
         console.error('Error fetching inbox:', err.message);
       } finally {
@@ -59,7 +60,9 @@ const Inbox = () => {
     };
 
     fetchMails();
-  }, [encodedEmail, token, dispatch]);
+    intervalRef.current=setInterval(fetchMails,2000);
+    return clearInterval(intervalRef.current);
+  }, [encodedEmail, token, dispatch,mails]);
 
   const openComposeHandler = () => {
     navigate('/compose');
