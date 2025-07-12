@@ -84,6 +84,28 @@ const Inbox = () => {
     alert(`Full Mail:\n\nSubject: ${mail.subject}\n\n${mail.body}`);
   };
 
+  const deleteMailHandler = async (mailId) => {
+  const receiverPath = userEmail?.replace(/[.@]/g, '');
+
+  try {
+    const response = await fetch(
+      `https://mailbox-9747c-default-rtdb.firebaseio.com/inbox/${receiverPath}/${mailId}.json?auth=${token}`,
+      {
+        method: 'DELETE',
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to delete');
+    }
+
+    dispatch(mailActions.deleteMail(mailId)); // ✅ Remove from Redux
+  } catch (err) {
+    console.error('Delete error:', err.message);
+  }
+};
+
+
   return (
     <Container className="mt-5">
       <Card className="p-4">
@@ -101,10 +123,22 @@ const Inbox = () => {
         ) : (
           <ListGroup>
             {mails.map((mail) => (
-              <ListGroup.Item key={mail.id} onClick={() => openMailHandler(mail.id)} style={{ cursor: 'pointer' }}>
+              <ListGroup.Item key={mail.id} onClick={() => openMailHandler(mail.id)} style={{ cursor: 'pointer' }} className="d-flex justify-content-between align-items-start">
+                <div>
                 {!mail.read && <span style={{ color: 'blue', fontSize: '1.2rem' }}>● </span>}
                 <strong>From:</strong> {mail.from} <br />
                 <strong>Subject:</strong> {mail.subject}
+                </div>
+                <Button
+                variant="outline-danger"
+                size="sm"
+                onClick={(e) => {
+                e.stopPropagation(); // 🛑 prevent triggering openMailHandler
+                deleteMailHandler(mail.id);
+                }}
+                >
+                🗑️
+                </Button>
               </ListGroup.Item>
             ))}
           </ListGroup>
