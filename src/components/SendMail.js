@@ -34,6 +34,7 @@ const SendMail = () => {
       subject,
       body: htmlBody,
       timestamp: new Date().toISOString(),
+      read: false,
     };
 
     const senderPath = senderEmail.replace(/[.@]/g, '');
