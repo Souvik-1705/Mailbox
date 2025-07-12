@@ -4,6 +4,7 @@ import { Editor } from 'react-draft-wysiwyg';
 import { EditorState, convertToRaw } from 'draft-js';
 import draftToHtml from 'draftjs-to-html';
 import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css';
+import useMailApi from '../hooks/useMailApi';
 
 const SendMail = () => {
   const [to, setTo] = useState('');
@@ -11,7 +12,8 @@ const SendMail = () => {
   const [editorState, setEditorState] = useState(EditorState.createEmpty());
   const [error, setError] = useState('');
   const [sentSuccess, setSentSuccess] = useState(false);
-  const token=localStorage.getItem("token");
+
+  const { sendMail } = useMailApi();
 
   const senderEmail = localStorage.getItem('email');
 
@@ -34,41 +36,17 @@ const SendMail = () => {
       subject,
       body: htmlBody,
       timestamp: new Date().toISOString(),
-      read: false,
+      read: false
     };
 
-    const senderPath = senderEmail.replace(/[.@]/g, '');
-    console.log(senderPath);
-    const receiverPath = to.replace(/[.@]/g, '');
-    console.log(receiverPath);
-
     try {
-       const res=
-      await fetch(
-        `https://mailbox-9747c-default-rtdb.firebaseio.com/inbox/${receiverPath}.json?auth=${token}`,
-        {
-          method: 'POST',
-          body: JSON.stringify(mailData),
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-      console.log(res);
-
-      await fetch(
-        `https://mailbox-9747c-default-rtdb.firebaseio.com/sent/${senderPath}.json?auth=${token}`,
-        {
-          method: 'POST',
-          body: JSON.stringify(mailData),
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-
+      await sendMail(mailData);
       setSentSuccess(true);
       setTo('');
       setSubject('');
       setEditorState(EditorState.createEmpty());
     } catch (err) {
-      setError('Failed to send mail. Try again later.');
+      setError('Failed to send mail. Please try again later.');
     }
   };
 

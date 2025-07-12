@@ -1,78 +1,40 @@
 // src/pages/Sent.js
 import React, { useEffect, useState } from 'react';
-import { Container, Card, Button, ListGroup, Spinner } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { Card, Container, ListGroup, Spinner } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import { mailActions } from '../store/mailSlice';
+import useMailApi from '../hooks/useMailApi';
 
 const Sent = () => {
-  const [sentMails, setSentMails] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-
-  const userEmail = localStorage.getItem('email');
-  const token = localStorage.getItem('token');
-  const encodedEmail = userEmail?.replace(/[.@]/g, '');
+  const dispatch = useDispatch();
+  const { mails } = useSelector(state => state.mail);
+  const { fetchSent } = useMailApi();
 
   useEffect(() => {
-    const fetchSentMails = async () => {
-      if (!token || !encodedEmail) return;
-
-      try {
-        const response = await fetch(
-          `https://mailbox-9747c-default-rtdb.firebaseio.com/sent/${encodedEmail}.json?auth=${token}`
-        );
-
-        if (!response.ok) throw new Error('Failed to fetch sent mails');
-
-        const data = await response.json();
-        const loadedMails = [];
-
-        for (let key in data) {
-          loadedMails.push({
-            id: key,
-            to: data[key].to,
-            subject: data[key].subject,
-            body: data[key].body,
-            timestamp: data[key].timestamp,
-          });
-        }
-
-        setSentMails(loadedMails.reverse());
-      } catch (err) {
-        console.error(err.message);
-      } finally {
-        setLoading(false);
-      }
+    const getMails = async () => {
+      const mails = await fetchSent();
+      dispatch(mailActions.setMails(mails));
+      setLoading(false);
     };
-
-    fetchSentMails();
-  }, [token, encodedEmail]);
-
-  const openComposeHandler = () => {
-    navigate('/compose');
-  };
-
-  const openSentMailHandler = (mail) => {
-    alert(`To: ${mail.to}\n\nSubject: ${mail.subject}\n\n${mail.body}`);
-  };
+    getMails();
+  }, [dispatch, fetchSent]);
 
   return (
     <Container className="mt-5">
       <Card className="p-4">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h2>Sent Mail</h2>
-          <Button onClick={openComposeHandler}>Compose</Button>
-        </div>
-
+        <h2>Sent Mails</h2>
         {loading ? (
           <Spinner animation="border" />
-        ) : sentMails.length === 0 ? (
-          <p>No sent mails found.</p>
+        ) : mails.length === 0 ? (
+          <p>No sent mails.</p>
         ) : (
           <ListGroup>
-            {sentMails.map(mail => (
-              <ListGroup.Item key={mail.id} onClick={() => openSentMailHandler(mail)} style={{ cursor: 'pointer' }}>
-                <strong>To:</strong> {mail.to} <br />
-                <strong>Subject:</strong> {mail.subject}
+            {mails.map((mail) => (
+              <ListGroup.Item key={mail.id}>
+                <div><strong>To:</strong> {mail.to}</div>
+                <div><strong>Subject:</strong> {mail.subject}</div>
+                <div dangerouslySetInnerHTML={{ __html: mail.body }} />
               </ListGroup.Item>
             ))}
           </ListGroup>
