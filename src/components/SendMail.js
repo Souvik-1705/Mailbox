@@ -11,6 +11,7 @@ const SendMail = () => {
   const [editorState, setEditorState] = useState(EditorState.createEmpty());
   const [error, setError] = useState('');
   const [sentSuccess, setSentSuccess] = useState(false);
+  const token=localStorage.getItem("token");
 
   const senderEmail = localStorage.getItem('email');
 
@@ -35,21 +36,25 @@ const SendMail = () => {
       timestamp: new Date().toISOString(),
     };
 
-    const senderPath = senderEmail.replace('.', ',');
-    const receiverPath = to.replace('.', ',');
+    const senderPath = senderEmail.replace(/[.@]/g, '');
+    console.log(senderPath);
+    const receiverPath = to.replace(/[.@]/g, '');
+    console.log(receiverPath);
 
     try {
+       const res=
       await fetch(
-        `https://mailbox-9747c-default-rtdb.firebaseio.com/inbox/${receiverPath}.json`,
+        `https://mailbox-9747c-default-rtdb.firebaseio.com/inbox/${receiverPath}.json?auth=${token}`,
         {
           method: 'POST',
           body: JSON.stringify(mailData),
           headers: { 'Content-Type': 'application/json' },
         }
       );
+      console.log(res);
 
       await fetch(
-        `https://mailbox-9747c-default-rtdb.firebaseio.com/sent/${senderPath}.json`,
+        `https://mailbox-9747c-default-rtdb.firebaseio.com/sent/${senderPath}.json?auth=${token}`,
         {
           method: 'POST',
           body: JSON.stringify(mailData),
